@@ -3,5 +3,4 @@
 venv/*
 
 # no css or js
-*/*.js*
-*/*.css
+**/*Advent of Code 2021*
