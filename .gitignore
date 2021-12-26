@@ -1,2 +1,7 @@
+# no pycharm/venv related stuff
 .idea/*
 venv/*
+
+# no css or js
+*/*.js*
+*/*.css
