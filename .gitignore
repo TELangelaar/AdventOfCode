@@ -1,6 +1,3 @@
 # no pycharm/venv related stuff
 .idea/*
 venv/*
-
-# no css or js
-**/*Advent of Code 2021*
