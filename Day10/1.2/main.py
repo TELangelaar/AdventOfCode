@@ -1,6 +1,3 @@
-import copy
-from typing import List
-
 import numpy as np
 from numpy import ndarray
 
@@ -12,74 +9,39 @@ class Mapping:
                 '[': ']',
                 '{': '}',
                 '<': '>'}
-    scores = {')': 1,
-              ']': 2,
-              '}': 3,
-              '>': 4}
+    scores = {')': 3,
+              ']': 57,
+              '}': 1197,
+              '>': 25137}
 
 
 def parse_input(file_name: str) -> ndarray:
     with open(file_name, 'r') as file:
         co = file.read().splitlines()
         co = [[char for char in item] for item in co]
-        return np.array(co)
+        return co
 
 
-def delete_corrupted_lines_from_input(inp: ndarray):
-    inp_copy = copy.deepcopy(inp)
-    i_arr = []
-    for i, line in zip(range(0, inp_copy.shape[0]), inp_copy):
-        tmp = []
-        for char in line:
-            if char in Mapping.open:
-                tmp.append(char)
-            else:
-                if char != Mapping.mappings[tmp[-1]]:
-                    i_arr.append(i)
-                    break
-                else:
-                    tmp.pop()
-    inp = np.delete(inp, i_arr, 0)
-    return inp
-
-
-def get_completions_for_incomplete_lines(inp: ndarray):
-    remainders = []
+def get_illegal_char_from_corrupted_lines(inp: ndarray):
+    illegal_chars = []
     for line in inp:
         tmp = []
         for char in line:
             if char in Mapping.open:
                 tmp.append(char)
             else:
-                if char == Mapping.mappings[tmp[-1]]:
-                    tmp.pop()
+                if char != Mapping.mappings[tmp[-1]]:
+                    illegal_chars.append(char)
+                    break
                 else:
-                    print('this shouldnt happen...')
-        remainders.append(tmp)
-
-    completions = [[Mapping.mappings[char] for char in line[::-1]] for line in remainders]
-    return completions
-
-
-def get_autocomplete_score(completions: List[List[str]]):
-    scores = []
-    for line in completions:
-        line_score = 0
-        for char in line:
-            line_score *= 5
-            line_score += Mapping.scores[char]
-        scores.append(line_score)
-
-    scores.sort()
-    index = int((len(scores) - 1) / 2)
-    return scores[index]
+                    tmp.pop()
+    return illegal_chars
 
 
 if __name__ == "__main__":
-    input_arr = parse_input('Day10/1.2/input.txt')
-    input_arr = delete_corrupted_lines_from_input(input_arr)
-    completions = get_completions_for_incomplete_lines(input_arr)
-    print(completions)
-
-    score = get_autocomplete_score(completions)
-    print(score)
+    input_arr = parse_input('Day10/1.1/input.txt')
+    illegal_chars = get_illegal_char_from_corrupted_lines(input_arr)
+    scores = 0
+    for char in illegal_chars:
+        scores += Mapping.scores[char]
+    print(scores)
