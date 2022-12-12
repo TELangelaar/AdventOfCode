@@ -2,8 +2,11 @@
 .idea/*
 venv/*
 
+# no ide stuff
+**/.vscode/
+
 # rust
 **/target/
 **/Cargo.lock
 **/*.exe
-**/*.pbt
+**/*.pdb
