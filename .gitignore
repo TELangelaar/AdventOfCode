@@ -1,3 +1,9 @@
 # no pycharm/venv related stuff
 .idea/*
 venv/*
+
+# rust
+**/target/
+**/Cargo.lock
+**/*.exe
+**/*.pbt
