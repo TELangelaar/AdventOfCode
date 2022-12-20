@@ -51,35 +51,59 @@ Monkey 3:
 
     println!("{result}");
     let mut notes = notes(&result).unwrap().1;
+    let mut total_inspections_per_monkey = vec![];
+    let mut supermodulo = 1;
+    for i in 0..notes.len() {
+        total_inspections_per_monkey.push(0);
+        supermodulo *= match notes[i].test {
+            Test::DivisibleBy(val) => val,
+        }
+    }
 
-    for _ in 0..20 {
-        play_round(&mut notes);
+    let relevant_rounds = [1,20,1000,2000,3000,4000];
+    for i in 0..10_000 {
+        play_round(&mut notes, &mut total_inspections_per_monkey, &supermodulo);
+        
+        if relevant_rounds.contains(&(i + 1)) {
+            println!("\n== After round {} ==", i+1);
+            for i in 0..notes.len() {
+                println!("Monkey {} inspected items {} times.", i, total_inspections_per_monkey[i]);
+            }
+        }
     }
 
     println!("{notes:?}");
+
+    total_inspections_per_monkey.sort();
+    total_inspections_per_monkey.reverse();
+    println!("Monkey business: {} * {} = {}", total_inspections_per_monkey[0], total_inspections_per_monkey[1], total_inspections_per_monkey[0] as u128 * total_inspections_per_monkey[1] as u128);
+
 }
 
-fn play_round(notes: &mut Vec<Note>) {
+fn play_round(notes: &mut Vec<Note>, total_inspections_per_monkey: &mut Vec<u32>, supermodulo: &u64) {
     for i in 0..notes.len() {
         let mut current_monkey = notes[i].clone();
         while let Some(item) = current_monkey.starting_items.pop_front() {
+            total_inspections_per_monkey[i] += 1;
             let mut worry_level = match current_monkey.operation {
-                Operation::Add(ref val) => item + val,
-                Operation::Multiply(ref val) => item * val,
+                Operation::Add(val) => item + val,
+                Operation::Multiply(val) => item * val,
                 Operation::Quadratic => item * item,
             };
-            worry_level = worry_level.div_floor(3);
+
+            // worry_level = worry_level / 3; // uncomment this for part 1
+            worry_level = worry_level % supermodulo; //comment this out for part 1
             let is_divisible_by = match current_monkey.test {
-                Test::DivisibleBy(val) => worry_level % val == 0,
+                Test::DivisibleBy(val) => worry_level % val == 0 
             };
 
             if is_divisible_by {
                 let mut other_monkey = notes[current_monkey.if_true as usize].clone();
-                other_monkey.starting_items.push_back(item);
+                other_monkey.starting_items.push_back(worry_level);
                 notes[current_monkey.if_true as usize] = other_monkey;
             } else {
                 let mut other_monkey = notes[current_monkey.if_false as usize].clone();
-                other_monkey.starting_items.push_back(item);
+                other_monkey.starting_items.push_back(worry_level);
                 notes[current_monkey.if_false as usize] = other_monkey;
             }
         }
@@ -90,7 +114,7 @@ fn play_round(notes: &mut Vec<Note>) {
 #[derive(Debug, Clone)]
 struct Note {
     monkey: u32,
-    starting_items: VecDeque<u32>,
+    starting_items: VecDeque<u64>,
     operation: Operation,
     test: Test,
     if_true: u32,
@@ -99,14 +123,14 @@ struct Note {
 
 #[derive(Debug, Clone)]
 enum Operation {
-    Add(u32),
-    Multiply(u32),
+    Add(u64),
+    Multiply(u64),
     Quadratic,
 }
 
 #[derive(Debug, Clone)]
 enum Test {
-    DivisibleBy(u32),
+    DivisibleBy(u64),
 }
 
 fn note(input: &str) -> IResult<&str, Note> {
@@ -114,7 +138,7 @@ fn note(input: &str) -> IResult<&str, Note> {
 
     let (input, starting_items) = preceded(
         tag("Starting items: "),
-        separated_list1(tag(", "), complete::u32),
+        separated_list1(tag(", "), complete::u64),
     )(input.trim_start())?;
 
     let (input, (operation, amount)) = preceded(
