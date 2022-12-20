@@ -55,12 +55,35 @@ Monkey 3:
     for _ in 0..20 {
         play_round(&mut notes);
     }
+
+    println!("{notes:?}");
 }
 
 fn play_round(notes: &mut Vec<Note>) {
     for i in 0..notes.len() {
-        let current_monkey = notes[i].clone();
-        notes[i] = current_monkey.play_turn();
+        let mut current_monkey = notes[i].clone();
+        while let Some(item) = current_monkey.starting_items.pop_front() {
+            let mut worry_level = match current_monkey.operation {
+                Operation::Add(ref val) => item + val,
+                Operation::Multiply(ref val) => item * val,
+                Operation::Quadratic => item * item,
+            };
+            worry_level = worry_level.div_floor(3);
+            let is_divisible_by = match current_monkey.test {
+                Test::DivisibleBy(val) => worry_level % val == 0,
+            };
+
+            if is_divisible_by {
+                let mut other_monkey = notes[current_monkey.if_true as usize].clone();
+                other_monkey.starting_items.push_back(item);
+                notes[current_monkey.if_true as usize] = other_monkey;
+            } else {
+                let mut other_monkey = notes[current_monkey.if_false as usize].clone();
+                other_monkey.starting_items.push_back(item);
+                notes[current_monkey.if_false as usize] = other_monkey;
+            }
+        }
+        notes[i] = current_monkey;
     }
 }
 
@@ -72,29 +95,6 @@ struct Note {
     test: Test,
     if_true: u32,
     if_false: u32,
-}
-
-trait Turn {
-    fn play_turn(self) -> Self;
-}
-
-impl Turn for Note {
-    fn play_turn(self) -> Note {
-        let mut items = self.starting_items;
-        while let Some(item) = items.pop_front() {
-            let mut worry_level = match self.operation {
-                Operation::Add(ref val) => item + val,
-                Operation::Multiply(ref val) => item * val,
-                Operation::Quadratic => item * item,
-            };
-            worry_level = worry_level.div_floor(3);
-            let is_divisible_by = match self.test {
-                Test::DivisibleBy(val) => worry_level % val == 0,
-            }
-        }
-
-        todo!()
-    }
 }
 
 #[derive(Debug, Clone)]
