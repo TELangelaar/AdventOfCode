@@ -8,7 +8,6 @@ edition = "2021"
 [dependencies]
 anyhow = "1.0.58"
 nom = "7.1.1"
-lending-iterator = "0.1.6"
 
 
 [lib]

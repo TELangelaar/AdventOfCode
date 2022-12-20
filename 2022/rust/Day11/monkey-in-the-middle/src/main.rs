@@ -1,5 +1,4 @@
 #![feature(int_roundings)]
-use ::lending_iterator::prelude::*;
 use nom::{
     branch::alt,
     bytes::complete::tag,
