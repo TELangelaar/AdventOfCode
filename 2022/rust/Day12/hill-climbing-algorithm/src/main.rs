@@ -83,7 +83,14 @@ fn solve_part1(current: &Position, next: &Position, heatmap: &Vec<Vec<Elevation>
             let next_elevation = &heatmap[next.row][next.col];
             match next_elevation {
                 Elevation::Start => SolveResult::DeadEnd,
-                Elevation::End => SolveResult::End(1),
+                Elevation::End => {
+                    let x = ('x' as u8) - 96;
+                    if *own_height > x {
+                        SolveResult::End(1)
+                    } else {
+                        SolveResult::DeadEnd
+                    }
+                }
                 Elevation::Height(other_height) => {
                     let range = other_height - 1..=other_height + 1;
                     if range.contains(own_height) {
@@ -103,6 +110,9 @@ enum SolveResult {
 }
 
 fn get_least_steps(current: &Position, previous: &Position, heatmap: &Vec<Vec<Elevation>>) -> u32 {
+    println!("Entered get_least_steps with:");
+    println!("\tCurrent {current:?}");
+    println!("\tPrevious {previous:?}");
     let mut paths = vec![];
     if current.row > 0 {
         let next = Position {
@@ -160,6 +170,7 @@ fn get_least_steps(current: &Position, previous: &Position, heatmap: &Vec<Vec<El
             SolveResult::DeadEnd => (),
         };
     }
+    println!("Exited get_least_steps with: {least_steps}");
     least_steps
 }
 
@@ -172,7 +183,7 @@ struct Position {
 #[derive(Debug, PartialEq, Eq, Clone)]
 enum Elevation {
     Start,
-    End(u8),
+    End,
     Height(u8),
 }
 
@@ -182,7 +193,7 @@ fn elevation(input: &str) -> IResult<&str, Vec<Elevation>> {
     for c in parsed.chars() {
         let c = match c {
             'S' => Elevation::Start,
-            'E' => Elevation::End(('z' as u8) - 96),
+            'E' => Elevation::End,
             char => {
                 let height = (char as u8) - 96;
                 Elevation::Height(height)
