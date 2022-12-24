@@ -16,11 +16,11 @@ pub mod loading {
     }
 
     pub fn read_file(args: &Vec<String>) -> anyhow::Result<String> {
-        if args.len() < 1 {
+        if args.is_empty() {
             return Err(anyhow!("Problem parsing arguments: not enough arguments"));
         }
 
-        let config = Config::new(&args);
+        let config = Config::new(args);
 
         let result = fs::read_to_string(&config.file_path)
             .with_context(|| format!("Could not read file '{}'", config.file_path))?;
@@ -40,7 +40,7 @@ pub mod parsing {
             results.push(
                 line.trim()
                     .parse::<u32>()
-                    .with_context(|| format!("Could not parse '{}' into u32", line))?, // We can just use this ? operator here because it will cascade the error back to the caller
+                    .with_context(|| format!("Could not parse '{line}' into u32"))?, // We can just use this ? operator here because it will cascade the error back to the caller
             );
         }
 
