@@ -42,8 +42,8 @@ fn main() {
         .max()
         .unwrap();
 
-    let offset_left = 200;
-    let offset_right = 200;
+    let offset_left = 300;
+    let offset_right = 300;
     for path in paths.iter_mut() {
         for pos in path.data.iter_mut() {
             pos.x = pos.x - lowest_x + offset_left;
