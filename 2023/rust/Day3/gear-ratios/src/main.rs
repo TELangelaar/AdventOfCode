@@ -2,8 +2,8 @@ use std::ops::Range;
 
 use nom::{
     branch::alt,
-    bytes::complete::take,
-    character::complete::{digit1, line_ending},
+    bytes::complete::{tag, take, is_a},
+    character::complete::{digit1, line_ending, one_of},
     combinator::{map, peek},
     multi::{many_till, separated_list1},
     IResult,
@@ -24,55 +24,107 @@ fn main() {
 .....+.58.
 ..592.....
 ......755.
-...$.*....
-.664.598..",
+...$.@....
+.664.598..
+",
         )
     });
 
     // let schematic = EngineSchematic::parse(&result).unwrap().1;
     let schematic = Schematic::parse(&result).unwrap().1;
-    // dbg!(schematic);
+    // dbg!(&schematic);
 
     // part 1
-    let not_adjacent_sum = schematic
-        .pieces
-        .iter()
-        .enumerate()
-        .fold(0, |acc, (row_number, row)| {
-            row.iter()
-                .filter(|piece| match piece.part {
-                    Part::Number(_) => true,
-                    _ => false,
-                })
-                .fold(0, |acc, piece| {
-                    let (previous_row, next_row) = match row_number {
-                        0 => (None, Some(1)),
-                        val => (
-                            Some(val - 1),
-                            if val >= schematic.pieces.len() {
-                                None
-                            } else {
-                                Some(val + 1)
-                            },
-                        ),
-                    };
-                    if let Some(previous) = previous_row {
-                        let row = schematic.pieces.get(previous).unwrap();
-                        if row
-                            .iter()
-                            .filter(|piece_compare| match piece_compare.part {
-                                Part::Symbol => true,
-                                _ => false,
-                            })
-                            .any(|piece_compare| piece_compare.col_range.contains((piece.col_range.start - 1)..(piece.col_range.end+1)))
+    let mut part1 = vec![];
+    for (i, row) in schematic.pieces.iter().enumerate() {
+        for (j, piece) in row
+            .iter()
+            .filter(|&piece| match piece.part {
+                Part::Number(_) => true,
+                _ => false,
+            })
+            .enumerate()
+        {
+            let mut is_part = false;
+
+            let above = match i {
+                0 => None,
+                _ => schematic.pieces.get(i - 1),
+            };
+
+            let below = schematic.pieces.get(i + 1);
+            let left = if j == 0 {
+                None
+            } else {
+                schematic.pieces.get(i).unwrap().get(j - 1)
+            };
+            let right = schematic.pieces.get(i).unwrap().get(j + 1);
+
+            let range_start = match piece.col_range.start {
+                0 => 0,
+                _ => piece.col_range.start - 1,
+            };
+            let range = (range_start)..(piece.col_range.end + 1);
+            if let Some(row_above) = above {
+                if row_above
+                    .iter()
+                    .filter(|&piece_compare| match piece_compare.part {
+                        Part::Symbol => true,
+                        _ => false,
+                    })
+                    .any(|piece_compare| range.contains(&piece_compare.col_range.start))
+                {
+                    println!("Found part using row above: {:#?}", piece);
+                    is_part = true;
+                };
+            }
+            if let Some(row_below) = below {
+                if row_below
+                    .iter()
+                    .filter(|&piece_compare| match piece_compare.part {
+                        Part::Symbol => true,
+                        _ => false,
+                    })
+                    .any(|piece_compare| range.contains(&piece_compare.col_range.start))
+                {
+                    println!("Found part using row below: {:#?}", piece);
+                    is_part = true;
+                };
+            }
+            if let Some(piece_left) = left {
+                match piece_left.part {
+                    Part::Symbol => {
+                        if range.contains(&piece_left.col_range.start) {
+                            println!("Found part using left: {:#?}", piece);
+                            is_part = true;
+                        }
                     }
-                    if let Some(next) = next_row {
-                        let row = schematic.pieces.get(next).unwrap();
+                    _ => (),
+                }
+            }
+            if let Some(piece_right) = right {
+                match piece_right.part {
+                    Part::Symbol => {
+                        if range.contains(&piece_right.col_range.start) {
+                            println!("Found part using right: {:#?}", piece);
+                            is_part = true;
+                        }
                     }
-                    row.iter().any(|piece_before| todo!());
-                    todo!()
-                })
-        });
+                    _ => (),
+                }
+            }
+
+            if is_part {
+                part1.push(piece);
+            }
+        }
+    }
+    let sum = part1.iter().fold(0, |acc, &piece| match &piece.part {
+        Part::Number(x) => x.parse::<usize>().unwrap() + acc,
+        _ => acc,
+    });
+    println!("{:#?}", sum);
+    // dbg!(schematic);
 }
 
 #[derive(Debug)]
@@ -103,6 +155,7 @@ impl Schematic<'_> {
     fn parse_pieces(input: &str) -> IResult<&str, Vec<Piece>> {
         let (input, (parts, _)) = many_till(
             alt((
+                map(one_of("!@#$%^&*()_-=+`~/:;,"), |_| Part::Symbol),
                 map(digit1, |s: &str| Part::Number(s)),
                 map(take(1usize), |s: &str| match s {
                     "." => Part::Period,
@@ -136,36 +189,5 @@ impl Schematic<'_> {
             .collect::<Vec<Piece>>();
 
         Ok((input, pieces))
-    }
-}
-
-#[derive(Debug)]
-struct EngineSchematic {
-    matrix: Vec<Vec<char>>,
-}
-
-impl EngineSchematic {
-    fn parse(input: &str) -> IResult<&str, EngineSchematic> {
-        let (input, matrix) = separated_list1(line_ending, EngineSchematic::parse_row)(input)?;
-
-        Ok((input, EngineSchematic { matrix }))
-    }
-    fn parse_row(input: &str) -> IResult<&str, Vec<char>> {
-        let (input, (row, _)) = many_till(
-            map(take(1usize), |s: &str| s.chars().next().unwrap()),
-            peek(line_ending),
-        )(input)?;
-
-        Ok((input, row))
-    }
-
-    fn solve(&self) -> Vec<u32> {
-        for (i, row) in self.matrix.iter().enumerate() {
-            for (j, char) in row.iter().enumerate() {
-                if let Some(char) = char.to_digit(10) {}
-            }
-        }
-
-        todo!()
     }
 }
