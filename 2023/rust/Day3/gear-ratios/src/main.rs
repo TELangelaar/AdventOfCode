@@ -24,7 +24,7 @@ fn main() {
 .....+.58.
 ..592.....
 ......755.
-...$.@....
+...$.*....
 .664.598..
 ",
         )
@@ -35,16 +35,27 @@ fn main() {
     // dbg!(&schematic);
 
     // part 1
+    let part1 = solve_part1(&schematic);
+    let sum = part1.iter().fold(0, |acc, &piece| match &piece.part {
+        Part::Number(x) => x.parse::<usize>().unwrap() + acc,
+        _ => acc,
+    });
+    println!("{:#?}", sum);
+    
+
+}
+
+fn solve_part1<'a>(schematic: &'a Schematic<'a>) -> Vec<&'a Piece<'a>> {
     let mut part1 = vec![];
     for (i, row) in schematic.pieces.iter().enumerate() {
         for (j, piece) in row
             .iter()
-            .filter(|&piece| match piece.part {
-                Part::Number(_) => true,
-                _ => false,
-            })
             .enumerate()
         {
+            match piece.part {
+                Part::Number(_) => (),
+                _ => continue
+            }
             let mut is_part = false;
 
             let above = match i {
@@ -56,15 +67,16 @@ fn main() {
             let left = if j == 0 {
                 None
             } else {
-                schematic.pieces.get(i).unwrap().get(j - 1)
+                row.get(j - 1)
             };
-            let right = schematic.pieces.get(i).unwrap().get(j + 1);
+            let right = row.get(j + 1);
 
             let range_start = match piece.col_range.start {
                 0 => 0,
                 _ => piece.col_range.start - 1,
             };
             let range = (range_start)..(piece.col_range.end + 1);
+
             if let Some(row_above) = above {
                 if row_above
                     .iter()
@@ -119,12 +131,8 @@ fn main() {
             }
         }
     }
-    let sum = part1.iter().fold(0, |acc, &piece| match &piece.part {
-        Part::Number(x) => x.parse::<usize>().unwrap() + acc,
-        _ => acc,
-    });
-    println!("{:#?}", sum);
-    // dbg!(schematic);
+    
+    part1
 }
 
 #[derive(Debug)]
@@ -156,11 +164,12 @@ impl Schematic<'_> {
         let (input, (parts, _)) = many_till(
             alt((
                 map(one_of("!@#$%^&*()_-=+`~/:;,"), |_| Part::Symbol),
+                map(tag("."), |_| Part::Period),
                 map(digit1, |s: &str| Part::Number(s)),
-                map(take(1usize), |s: &str| match s {
-                    "." => Part::Period,
-                    _ => Part::Symbol,
-                }),
+                // map(take(1usize), |s: &str| match s {
+                //     "." => Part::Period,
+                //     _ => Part::Symbol,
+                // }),
             )),
             peek(line_ending),
         )(input)?;
