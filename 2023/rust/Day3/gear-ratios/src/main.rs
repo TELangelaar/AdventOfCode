@@ -2,7 +2,7 @@ use std::ops::Range;
 
 use nom::{
     branch::alt,
-    bytes::complete::{tag, take, is_a},
+    bytes::complete::{is_a, tag, take},
     character::complete::{digit1, line_ending, one_of},
     combinator::{map, peek},
     multi::{many_till, separated_list1},
@@ -34,105 +34,103 @@ fn main() {
     let schematic = Schematic::parse(&result).unwrap().1;
     // dbg!(&schematic);
 
-    // part 1
-    let part1 = solve_part1(&schematic);
-    let sum = part1.iter().fold(0, |acc, &piece| match &piece.part {
-        Part::Number(x) => x.parse::<usize>().unwrap() + acc,
-        _ => acc,
-    });
-    println!("{:#?}", sum);
-    
-
+    // part 2
+    let part2 = solve_part1(&schematic);
 }
 
-fn solve_part1<'a>(schematic: &'a Schematic<'a>) -> Vec<&'a Piece<'a>> {
-    let mut part1 = vec![];
+fn solve_part1<'a>(schematic: &'a Schematic<'a>) -> Vec<u32> {
+    let mut gear_ratios = vec![];
     for (i, row) in schematic.pieces.iter().enumerate() {
-        for (j, piece) in row
-            .iter()
-            .enumerate()
-        {
+        for (j, piece) in row.iter().enumerate() {
             match piece.part {
                 Part::Number(_) => (),
-                _ => continue
+                _ => continue,
             }
-            let mut is_part = false;
-
-            let above = match i {
-                0 => None,
-                _ => schematic.pieces.get(i - 1),
-            };
-
-            let below = schematic.pieces.get(i + 1);
-            let left = if j == 0 {
-                None
-            } else {
-                row.get(j - 1)
-            };
-            let right = row.get(j + 1);
-
-            let range_start = match piece.col_range.start {
-                0 => 0,
-                _ => piece.col_range.start - 1,
-            };
-            let range = (range_start)..(piece.col_range.end + 1);
-
-            if let Some(row_above) = above {
-                if row_above
-                    .iter()
-                    .filter(|&piece_compare| match piece_compare.part {
-                        Part::Symbol => true,
-                        _ => false,
-                    })
-                    .any(|piece_compare| range.contains(&piece_compare.col_range.start))
-                {
-                    println!("Found part using row above: {:#?}", piece);
-                    is_part = true;
-                };
-            }
-            if let Some(row_below) = below {
-                if row_below
-                    .iter()
-                    .filter(|&piece_compare| match piece_compare.part {
-                        Part::Symbol => true,
-                        _ => false,
-                    })
-                    .any(|piece_compare| range.contains(&piece_compare.col_range.start))
-                {
-                    println!("Found part using row below: {:#?}", piece);
-                    is_part = true;
-                };
-            }
-            if let Some(piece_left) = left {
-                match piece_left.part {
-                    Part::Symbol => {
-                        if range.contains(&piece_left.col_range.start) {
-                            println!("Found part using left: {:#?}", piece);
-                            is_part = true;
-                        }
-                    }
-                    _ => (),
-                }
-            }
-            if let Some(piece_right) = right {
-                match piece_right.part {
-                    Part::Symbol => {
-                        if range.contains(&piece_right.col_range.start) {
-                            println!("Found part using right: {:#?}", piece);
-                            is_part = true;
-                        }
-                    }
-                    _ => (),
-                }
-            }
-
+            let is_part = is_part(i, schematic, j, row, piece);
+            
+            let mut gear_ratio = 0;
             if is_part {
-                part1.push(piece);
+               match piece.part {
+                Part::Number(val) => todo!(),
+                _ => panic!()
+               }
+            } else {
+
             }
         }
     }
-    
-    part1
+
+    gear_ratios
+}
+
+fn is_part(i: usize, schematic: &Schematic<'_>, j: usize, row: &Vec<Piece<'_>>, piece: &Piece<'_>) -> bool {
+    let mut is_part = false;
+
+    let above = match i {
+        0 => None,
+        _ => schematic.pieces.get(i - 1),
+    };
+
+    let below = schematic.pieces.get(i + 1);
+    let left = if j == 0 { None } else { row.get(j - 1) };
+    let right = row.get(j + 1);
+
+    let range_start = match piece.col_range.start {
+        0 => 0,
+        _ => piece.col_range.start - 1,
+    };
+    let range = (range_start)..(piece.col_range.end + 1);
+
+    if let Some(row_above) = above {
+        if row_above
+            .iter()
+            .filter(|&piece_compare| match piece_compare.part {
+                Part::Symbol => true,
+                _ => false,
+            })
+            .any(|piece_compare| range.contains(&piece_compare.col_range.start))
+        {
+            println!("Found part using row above: {:#?}", piece);
+            is_part = true;
+        };
+    }
+    if let Some(row_below) = below {
+        if row_below
+            .iter()
+            .filter(|&piece_compare| match piece_compare.part {
+                Part::Symbol => true,
+                _ => false,
+            })
+            .any(|piece_compare| range.contains(&piece_compare.col_range.start))
+        {
+            println!("Found part using row below: {:#?}", piece);
+            is_part = true;
+        };
+    }
+    if let Some(piece_left) = left {
+        match piece_left.part {
+            Part::Symbol => {
+                if range.contains(&piece_left.col_range.start) {
+                    println!("Found part using left: {:#?}", piece);
+                    is_part = true;
+                }
+            }
+            _ => (),
+        }
+    }
+    if let Some(piece_right) = right {
+        match piece_right.part {
+            Part::Symbol => {
+                if range.contains(&piece_right.col_range.start) {
+                    println!("Found part using right: {:#?}", piece);
+                    is_part = true;
+                }
+            }
+            _ => (),
+        }
+    }
+
+    is_part
 }
 
 #[derive(Debug)]
@@ -151,6 +149,7 @@ enum Part<'a> {
     Number(&'a str),
     Period,
     Symbol,
+    Star,
 }
 
 impl Schematic<'_> {
@@ -163,8 +162,9 @@ impl Schematic<'_> {
     fn parse_pieces(input: &str) -> IResult<&str, Vec<Piece>> {
         let (input, (parts, _)) = many_till(
             alt((
-                map(one_of("!@#$%^&*()_-=+`~/:;,"), |_| Part::Symbol),
+                map(one_of("!@#$%^&()_-=+`~/:;,"), |_| Part::Symbol),
                 map(tag("."), |_| Part::Period),
+                map(tag("*"), |_| Part::Star),
                 map(digit1, |s: &str| Part::Number(s)),
                 // map(take(1usize), |s: &str| match s {
                 //     "." => Part::Period,
