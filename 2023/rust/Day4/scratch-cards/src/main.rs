@@ -10,7 +10,7 @@ use nom::{
 };
 
 fn main() {
-    let args = &vec!["xinput.txt".to_string()];
+    let args = &vec!["input.txt".to_string()];
 
     let result = io::loading::read_file(args).unwrap_or_else(|err| {
         eprintln!("{err}");
@@ -40,7 +40,7 @@ Card 6: 31 18 13 56 72 | 74 77 10 23 35 67 36 11
             }
         })
     });
-    println!("sum: {:#?}", sum);
+    println!("part 1 sum: {:#?}", sum);
 
     //Part2
     let mut cards_won = vec![];
@@ -57,17 +57,18 @@ Card 6: 31 18 13 56 72 | 74 77 10 23 35 67 36 11
         lookup.push(n_matching);
     }
 
-    println!("Before: {:#?}", cards_won);
-    for (i, value) in cards_won.iter().enumerate() {
-        for j in (i + 1)..=(i + value) {
-            *cards_won.get_mut(j).unwrap() += 1;
+    for i in 0..cards_won.len() {
+        let val = lookup.get(i).unwrap();
+
+        for _ in 0..(cards_won.get(i).unwrap().clone()) {
+            for j in (i + 1)..=(i + val) {
+                *cards_won.get_mut(j).unwrap() += 1;
+            }
         }
     }
 
     let sum2: usize = cards_won.iter().sum();
-    println!("{:#?}", sum2);
-    dbg!(cards_won);
-    dbg!(lookup);
+    println!("part 2 sum: {:#?}", sum2);
 }
 
 #[derive(Debug)]
