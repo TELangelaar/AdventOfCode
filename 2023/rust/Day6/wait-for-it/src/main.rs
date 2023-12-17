@@ -29,6 +29,14 @@ Distance:  9  40  200
         .into_iter()
         .fold(1usize, |acc, race| acc * race.get_winning_posibilities());
     println!("Part1 answer: {:#?}", total);
+
+    // Part 2
+    let race = Race {
+        time: 50748685,
+        distance: 242101716911252,
+    };
+    let result = race.get_winning_posibilities();
+    println!("Part2 answer: {:#?}", result)
 }
 
 #[derive(Debug)]
